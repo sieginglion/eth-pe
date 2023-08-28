@@ -1,30 +1,40 @@
 import asyncio
 
+import aiofiles
 import arrow
 import fastapi
 import numpy as np
-from httpx import AsyncClient
 
 app = fastapi.FastAPI()
 
 
-async def get_supply(client: AsyncClient):
-    res = await client.get('https://etherscan.io/chart/ethersupplygrowth?output=csv')
+async def get_end_date():
+    async with aiofiles.open('supply.csv') as f:
+        csv = await f.read()
+    return arrow.get(
+        int(csv.rstrip().split('\n')[-1].replace('"', '').split(',')[1]), tzinfo='UTC'
+    )
+
+
+async def get_supply():
+    async with aiofiles.open('supply.csv') as f:
+        csv = await f.read()
     return np.array(
         [
-            int(float(e.replace('"', '').split(',')[2]))
-            for e in res.text.strip().split('\r\n')[-730:]
+            float(e.replace('"', '').split(',')[2])
+            for e in csv.rstrip().split('\n')[-730:]
         ],
         int,
     )
 
 
-async def get_price(client: AsyncClient):
-    res = await client.get('https://etherscan.io/chart/etherprice?output=csv')
+async def get_price():
+    async with aiofiles.open('price.csv') as f:
+        csv = await f.read()
     return np.array(
         [
-            int(float(e.replace('"', '').split(',')[2]))
-            for e in res.text.strip().split('\r\n')[-729:]
+            float(e.replace('"', '').split(',')[2])
+            for e in csv.rstrip().split('\n')[-729:]
         ],
         int,
     )
@@ -32,12 +42,12 @@ async def get_price(client: AsyncClient):
 
 @app.get('/')
 async def root():
-    async with AsyncClient(timeout=60) as client:
-        supply, price = await asyncio.gather(get_supply(client), get_price(client))
-    end = arrow.utcnow().shift(days=-1)
+    end_date, supply, price = await asyncio.gather(
+        get_end_date(), get_supply(), get_price()
+    )
     date = [
         e.format('YY-MM-DD')
-        for e in arrow.Arrow.range('day', end.shift(days=-728), end)
+        for e in arrow.Arrow.range('day', end_date.shift(days=-728), end_date)
     ]
     net_issued = np.diff(supply)
     earnings = -net_issued * price
