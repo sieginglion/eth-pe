@@ -13,8 +13,8 @@ update_crontab() {
 update_crontab supply.csv https://etherscan.io/chart/ethersupplygrowth?output=csv
 update_crontab price.csv https://etherscan.io/chart/etherprice?output=csv
 
-curl -o supply.csv https://etherscan.io/chart/ethersupplygrowth?output=csv
-curl -o price.csv https://etherscan.io/chart/etherprice?output=csv
+curl -so supply.csv https://etherscan.io/chart/ethersupplygrowth?output=csv
+curl -so price.csv https://etherscan.io/chart/etherprice?output=csv
 
 pkill -f uvicorn
 sleep 1
