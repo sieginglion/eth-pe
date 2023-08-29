@@ -6,7 +6,7 @@ update_crontab() {
     local file=$1
     local url=$2
     if ! grep -q "$file" /etc/crontab; then
-        echo "0 1 * * *	root	curl -o $(pwd)/$file $url" | sudo tee -a /etc/crontab
+        echo "0 3 * * *	root	curl -o $(pwd)/$file $url" | sudo tee -a /etc/crontab >/dev/null
     fi
 }
 

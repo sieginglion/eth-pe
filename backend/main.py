@@ -49,14 +49,14 @@ async def root():
         e.format('YY-MM-DD')
         for e in arrow.Arrow.range('day', end_date.shift(days=-728), end_date)
     ]
-    net_issued = np.diff(supply)
-    earnings = -net_issued * price
+    net_issuance = np.diff(supply)
+    earnings = -net_issuance * price
     ttm = np.convolve(earnings, np.ones(365, int), mode='valid')
     pe = (supply[-365:] * price[-365:] / ttm).astype(int)
     pe[pe < 0] = 0
     return {
         'date': date,
-        'net_issued': net_issued.tolist(),
+        'net_issuance': net_issuance.tolist(),
         'earnings': earnings.tolist(),
         'ttm': ttm.tolist(),
         'pe': pe.tolist(),
