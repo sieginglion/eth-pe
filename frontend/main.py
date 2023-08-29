@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import requests as r
 import streamlit as st
 
-BASE_URL = os.getenv('BASE_URL', 'http://eth-pe.info:8080')
+BASE_URL = os.getenv('BASE_URL', 'http://127.0.0.1:8080')
 
 
 @dataclass
@@ -16,6 +16,7 @@ class Data:
     pe: list[int]
 
 
+@st.cache_data(ttl=3600)
 def get_data():
     return Data(**r.get(BASE_URL + '/').json())
 
