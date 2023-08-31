@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from typing import NamedTuple
 
 import requests as r
 import streamlit as st
@@ -7,8 +7,7 @@ from streamlit.components.v1 import html as display_html
 BASE_URL = 'http://127.0.0.1:8080'
 
 
-@dataclass
-class Data:
+class Data(NamedTuple):
     date: list[str]
     net_issuance: list[int]
     earnings: list[int]
