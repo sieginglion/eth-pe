@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "eth-pe"
+name = "eth-pe.info"
 version = "0.1.0"
 description = ""
 authors = ["sieginglion <sieginglion@gmail.com>"]
