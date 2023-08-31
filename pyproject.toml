@@ -9,10 +9,13 @@ readme = "README.md"
 python = "^3.10"
 
 [tool.poetry.group.backend.dependencies]
-aiofiles = "^23.2.1"
 arrow = "^1.2.3"
+asyncache = "^0.3.1"
+cachetools = "^5.3.1"
 fastapi = "^0.103.0"
+httpx = "^0.24.1"
 numpy = "^1.25.2"
+python-dotenv = "^1.0.0"
 uvicorn = "^0.23.2"
 
 [tool.poetry.group.frontend.dependencies]

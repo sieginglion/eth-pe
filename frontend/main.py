@@ -1,11 +1,10 @@
-import os
 from dataclasses import dataclass
 
 import requests as r
 import streamlit as st
 from streamlit.components.v1 import html as display_html
 
-BASE_URL = os.getenv('BASE_URL', 'http://127.0.0.1:8080')
+BASE_URL = 'http://127.0.0.1:8080'
 
 
 @dataclass
