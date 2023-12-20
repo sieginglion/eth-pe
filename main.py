@@ -1,14 +1,48 @@
+import asyncio
+import os
 from typing import NamedTuple
 
-import requests as r
-import streamlit as st
-import os
+import arrow
 import dotenv
+import httpx
+import numpy as np
+import streamlit as st
 
 dotenv.load_dotenv()
 
-WALLET_URL = os.getenv('WALLET_URL')
+PROXY = os.getenv('PROXY') or None
 COFFEE_URL = os.getenv('COFFEE_URL')
+WALLET_URL = os.getenv('WALLET_URL')
+
+PRICE_CSV_URL = 'https://etherscan.io/chart/etherprice?output=csv'
+SUPPLY_CSV_URL = 'https://etherscan.io/chart/ethersupplygrowth?output=csv'
+USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36'
+
+
+async def get_csv(url: str):
+    async with httpx.AsyncClient(
+        headers={'User-Agent': USER_AGENT}, proxies=PROXY, timeout=60
+    ) as client:
+        return (await client.get(url)).text
+
+
+def parse_csv(csv: str):
+    lines = csv.rstrip().replace('\r', '').split('\n')[1:]
+    return np.array([float(l.replace('"', '').split(',')[2]) for l in lines], int)
+
+
+async def get_supply():
+    return parse_csv(await get_csv(SUPPLY_CSV_URL))[-730:]
+
+
+async def get_price():
+    return parse_csv(await get_csv(PRICE_CSV_URL))[-729:]
+
+
+async def get_end_date():
+    csv = await get_csv(SUPPLY_CSV_URL)
+    line = csv.rstrip().replace('\r', '').split('\n')[-1]
+    return arrow.get(int(line.replace('"', '').split(',')[1]), tzinfo='UTC')
 
 
 class Data(NamedTuple):
@@ -19,9 +53,30 @@ class Data(NamedTuple):
     pe: list[int]
 
 
-@st.cache_data(ttl=3600)
+async def async_get_data():
+    supply, price = await asyncio.gather(get_supply(), get_price())
+    end_date = await get_end_date()
+    date = [
+        e.format('YY-MM-DD')
+        for e in arrow.Arrow.range('day', end_date.shift(days=-728), end_date)
+    ]
+    net_issuance = np.diff(supply)
+    earnings = -net_issuance * price
+    ttm = np.convolve(earnings, np.ones(365, int), 'valid')
+    pe = (supply[-365:] * price[-365:] / ttm).astype(int)
+    pe[pe < 0] = 0
+    return Data(
+        date,
+        net_issuance.tolist(),
+        earnings.tolist(),
+        ttm.tolist(),
+        pe.tolist(),
+    )
+
+
+@st.cache_data(ttl=43200)
 def get_data():
-    return Data(**r.get('http://127.0.0.1:8080/').json())
+    return asyncio.run(async_get_data())
 
 
 def display_header():
